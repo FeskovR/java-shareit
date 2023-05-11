@@ -18,7 +18,7 @@ import java.util.Map;
 @Slf4j
 public class ItemController {
     private final ItemService itemService;
-    private final String USER_ID_FROM_HEADER = "x-sharer-user-id";
+    private final String ownerIdHeaderTitle = "x-sharer-user-id";
 
     @PostMapping
     public Item addItem(@RequestBody ItemDto itemDto, @RequestHeader Map<String, String> headers) {
@@ -51,6 +51,6 @@ public class ItemController {
     }
 
     private long getOwnerId(Map<String, String> headers) {
-        return Long.parseLong(headers.getOrDefault(USER_ID_FROM_HEADER, "0"));
+        return Long.parseLong(headers.getOrDefault(ownerIdHeaderTitle, "0"));
     }
 }
