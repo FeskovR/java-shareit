@@ -2,10 +2,15 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.exceptions.ItemOwnerNotExistException;
+import ru.practicum.shareit.exceptions.ItemOwnerValidationException;
 import ru.practicum.shareit.exceptions.NotFoundException;
+import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.storage.UserStorage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,10 +19,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ItemService {
     private final ItemStorage itemStorage;
+    private final UserStorage userStorage;
     private long id = 1;
 
     public Item addItem(ItemDto itemDto, long ownerId) {
-        ItemValidationService.validate(itemDto, ownerId);
+        validate(itemDto, ownerId);
 
         Item item = ItemMapper.toItem(itemDto);
         item.setId(id++);
@@ -28,7 +34,7 @@ public class ItemService {
 
     public Item updateItem(ItemDto itemDto, long ownerId, long itemId) {
         Item item = itemStorage.findItemById(itemId);
-        ItemValidationService.checkOwnerId(ownerId);
+        checkOwnerId(ownerId);
 
         if (item == null)
             throw new NotFoundException("Вещь для обновления не найдена");
@@ -55,7 +61,7 @@ public class ItemService {
     }
 
     public List<Item> findAllByOwnerId(long ownerId) {
-        ItemValidationService.checkOwnerId(ownerId);
+        checkOwnerId(ownerId);
         return itemStorage.findAllItemsByUserId(ownerId);
     }
 
@@ -75,5 +81,35 @@ public class ItemService {
         }
 
         return resultList;
+    }
+
+    // методы для валидации
+    public void validate(ItemDto itemDto, long ownerId) {
+        checkOwnerId(ownerId);
+
+        if (isOwnerNotExist(ownerId)) {
+            throw new ItemOwnerNotExistException("Указанный владелец не зарегестрирован");
+        }
+
+        if (
+                itemDto.getName() == null ||
+                        itemDto.getName().isBlank() ||
+                        itemDto.getDescription() == null ||
+                        itemDto.getDescription().isBlank() ||
+                        itemDto.getAvailable() == null
+        ) {
+            throw new ValidationException("Не хватает данных");
+        }
+    }
+
+    public void checkOwnerId(long ownerId) {
+        if (ownerId == 0) {
+            throw new ItemOwnerValidationException("Не указан владелец");
+        }
+    }
+
+    private boolean isOwnerNotExist(long ownerId) {
+        User owner = userStorage.findUserById(ownerId);
+        return owner == null;
     }
 }
