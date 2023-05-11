@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class InMemoryItemStorage implements ItemStorage{
+public class InMemoryItemStorage implements ItemStorage {
     Map<Long, Item> items = new HashMap<>();
 
     @Override
