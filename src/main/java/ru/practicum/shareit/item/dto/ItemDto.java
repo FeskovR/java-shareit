@@ -12,6 +12,6 @@ import ru.practicum.shareit.request.model.ItemRequest;
 public class ItemDto {
     private String name;
     private String description;
-    private boolean available;
+    private Boolean available;
     private ItemRequest request;
 }

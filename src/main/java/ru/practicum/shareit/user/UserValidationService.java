@@ -5,14 +5,14 @@ import org.springframework.stereotype.Service;
 import ru.practicum.shareit.exceptions.DuplicateValidationException;
 import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.InMemoryUserStorage;
+import ru.practicum.shareit.user.storage.UserStorage;
 
 @Service
 @Slf4j
 public class UserValidationService {
-    private static InMemoryUserStorage userStorage;
+    private static UserStorage userStorage;
 
-    public UserValidationService(InMemoryUserStorage userStorage) {
+    public UserValidationService(UserStorage userStorage) {
         UserValidationService.userStorage = userStorage;
     }
 

@@ -8,7 +8,18 @@ public class ItemMapper {
         return new ItemDto(
                 item.getName(),
                 item.getDescription(),
-                item.isAvailable(),
+                item.getAvailable(),
                 item.getRequest() != null ? item.getRequest() : null);
+    }
+
+    public static Item toItem(ItemDto itemDto) {
+        return new Item(
+                0,
+                itemDto.getName(),
+                itemDto.getDescription(),
+                itemDto.getAvailable(),
+                0,
+                itemDto.getRequest()
+        );
     }
 }
