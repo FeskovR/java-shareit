@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 public class ItemController {
     private final ItemService itemService;
-    private final String OWNER = "x-sharer-user-id";
+    private final String ownerIdHeaderTitle = "x-sharer-user-id";
 
     /**
      * Добавление новой вещи
@@ -22,7 +22,7 @@ public class ItemController {
      * @return item DTO
      */
     @PostMapping
-    public ItemDto addItem(@RequestBody ItemDto itemDto, @RequestHeader(OWNER) long owner) {
+    public ItemDto addItem(@RequestBody ItemDto itemDto, @RequestHeader(ownerIdHeaderTitle) long owner) {
         log.info("Adding new item");
         return itemService.addItem(itemDto, owner);
     }
@@ -37,7 +37,7 @@ public class ItemController {
     @PatchMapping("/{itemId}")
     public ItemDto updateItem(@RequestBody ItemDto itemDto,
                            @PathVariable long itemId,
-                           @RequestHeader(OWNER) long owner) {
+                           @RequestHeader(ownerIdHeaderTitle) long owner) {
         log.info("Updating item id: " + itemId);
         return itemService.updateItem(itemDto, owner, itemId);
     }
@@ -59,7 +59,7 @@ public class ItemController {
      * @return list of user itemsDto
      */
     @GetMapping
-    public List<ItemDto> findAllByOwnerId(@RequestHeader(OWNER) long owner) {
+    public List<ItemDto> findAllByOwnerId(@RequestHeader(ownerIdHeaderTitle) long owner) {
         log.info("Getting all items by owner id: " + owner);
         return itemService.findAllByOwnerId(owner);
     }
