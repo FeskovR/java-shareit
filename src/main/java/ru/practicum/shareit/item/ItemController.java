@@ -13,7 +13,7 @@ import java.util.List;
 @Slf4j
 public class ItemController {
     private final ItemService itemService;
-    private final static String OWNER_ID_HEADER_TITLE = "x-sharer-user-id";
+    private final String OWNER_ID_HEADER_TITLE = "x-sharer-user-id";
 
     /**
      * Добавление новой вещи
