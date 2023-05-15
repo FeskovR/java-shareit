@@ -40,11 +40,6 @@ public class InMemoryItemStorage implements ItemStorage {
     }
 
     @Override
-    public Item searchItem(String query) {
-        return null;
-    }
-
-    @Override
     public List<Item> findAll() {
         return new ArrayList<>(items.values());
     }

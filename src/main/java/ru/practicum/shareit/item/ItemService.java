@@ -22,17 +22,17 @@ public class ItemService {
     private final UserStorage userStorage;
     private long id = 1;
 
-    public Item addItem(ItemDto itemDto, long ownerId) {
+    public ItemDto addItem(ItemDto itemDto, long ownerId) {
         validate(itemDto, ownerId);
 
         Item item = ItemMapper.toItem(itemDto);
         item.setId(id++);
         item.setOwner(ownerId);
 
-        return itemStorage.addItem(item);
+        return ItemMapper.toItemDto(itemStorage.addItem(item));
     }
 
-    public Item updateItem(ItemDto itemDto, long ownerId, long itemId) {
+    public ItemDto updateItem(ItemDto itemDto, long ownerId, long itemId) {
         Item item = itemStorage.findItemById(itemId);
         checkOwnerId(ownerId);
 
@@ -48,26 +48,31 @@ public class ItemService {
         if (itemDto.getAvailable() != null)
             item.setAvailable(itemDto.getAvailable());
 
-        return itemStorage.updateItem(item);
+        return ItemMapper.toItemDto(itemStorage.updateItem(item));
     }
 
-    public Item findItemById(long itemId) {
+    public ItemDto findItemById(long itemId) {
         Item item = itemStorage.findItemById(itemId);
 
         if (item == null)
             throw new NotFoundException("Вещь не найдена");
 
-        return item;
+        return ItemMapper.toItemDto(item);
     }
 
-    public List<Item> findAllByOwnerId(long ownerId) {
+    public List<ItemDto> findAllByOwnerId(long ownerId) {
         checkOwnerId(ownerId);
-        return itemStorage.findAllItemsByUserId(ownerId);
+
+        List<ItemDto> userItems = new ArrayList<>();
+        for (Item item : itemStorage.findAllItemsByUserId(ownerId)) {
+            userItems.add(ItemMapper.toItemDto(item));
+        }
+        return userItems;
     }
 
-    public List<Item> searchByText(String text) {
+    public List<ItemDto> searchByText(String text) {
         List<Item> itemList = itemStorage.findAll();
-        List<Item> resultList = new ArrayList<>();
+        List<ItemDto> resultList = new ArrayList<>();
 
         if (text == null || text.isBlank() || text.isEmpty())
             return resultList;
@@ -76,7 +81,7 @@ public class ItemService {
             if (item.getName().toLowerCase().contains(text.toLowerCase()) ||
                 item.getDescription().toLowerCase().contains(text.toLowerCase()) &&
                 item.getAvailable()) {
-                resultList.add(item);
+                resultList.add(ItemMapper.toItemDto(item));
             }
         }
 
