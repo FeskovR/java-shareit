@@ -2,76 +2,86 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import ru.practicum.shareit.exceptions.ItemOwnerNotExistException;
-import ru.practicum.shareit.exceptions.ItemOwnerValidationException;
 import ru.practicum.shareit.exceptions.NotFoundException;
-import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
-import ru.practicum.shareit.item.storage.ItemStorage;
+import ru.practicum.shareit.user.UserRepository;
+import ru.practicum.shareit.user.UserValidationService;
 import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.storage.UserStorage;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
 public class ItemService {
-    private final ItemStorage itemStorage;
-    private final UserStorage userStorage;
-    private long id = 1;
+    private final ItemRepository itemRepository;
+    private final UserRepository userRepository;
+    private final ItemValidationService itemValidationService;
+    private final UserValidationService userValidationService;
 
     public ItemDto addItem(ItemDto itemDto, long ownerId) {
-        validate(itemDto, ownerId);
-
-        Item item = ItemMapper.toItem(itemDto);
-        item.setId(id++);
-        item.setOwner(ownerId);
-
-        return ItemMapper.toItemDto(itemStorage.addItem(item));
+        itemValidationService.validate(itemDto);
+        userValidationService.checkUserIsExist(ownerId);
+        Item item = ItemMapper.toItem(itemDto, userRepository.findById(ownerId).get());
+        Item returnedItem = itemRepository.save(item);
+        return ItemMapper.toItemDto(returnedItem);
     }
 
     public ItemDto updateItem(ItemDto itemDto, long ownerId, long itemId) {
-        Item item = itemStorage.findItemById(itemId);
-        checkOwnerId(ownerId);
+        Optional<Item> optionalItem = itemRepository.findById(itemId);
+        Optional<User> optionalUser = userRepository.findById(ownerId);
+        if (optionalItem.isEmpty() || optionalUser.isEmpty()) {
+            throw new NotFoundException("Item or User not found");
+        } else {
+            Item updatingItem = optionalItem.get();
+            Item newItem = ItemMapper.toItem(itemDto, optionalUser.get());
 
-        if (item == null)
-            throw new NotFoundException("Вещь для обновления не найдена");
-        if (ownerId != item.getOwner())
-            throw new NotFoundException("Эта вещь вам не принадлежит");
+            if (updatingItem.getOwner() != newItem.getOwner()) {
+                throw new NotFoundException("User is not owner of this item");
+            }
 
-        if (itemDto.getName() != null)
-            item.setName(itemDto.getName());
-        if (itemDto.getDescription() != null)
-            item.setDescription(itemDto.getDescription());
-        if (itemDto.getAvailable() != null)
-            item.setAvailable(itemDto.getAvailable());
+            if (newItem.getName() == null)
+                newItem.setName(updatingItem.getName());
+            if (newItem.getDescription() == null)
+                newItem.setDescription(updatingItem.getDescription());
+            if (newItem.getAvailable() == null)
+                newItem.setAvailable(updatingItem.getAvailable());
 
-        return ItemMapper.toItemDto(itemStorage.updateItem(item));
+            newItem.setId(updatingItem.getId());
+            Item updatedItem = itemRepository.save(newItem);
+            return ItemMapper.toItemDto(updatedItem);
+        }
     }
 
     public ItemDto findItemById(long itemId) {
-        Item item = itemStorage.findItemById(itemId);
+        Optional<Item> optionalItem = itemRepository.findById(itemId);
 
-        if (item == null)
-            throw new NotFoundException("Вещь не найдена");
-
-        return ItemMapper.toItemDto(item);
+        if (optionalItem.isPresent()) {
+            return ItemMapper.toItemDto(optionalItem.get());
+        } else {
+            throw new NotFoundException("Item not found");
+        }
     }
 
     public List<ItemDto> findAllByOwnerId(long ownerId) {
-        checkOwnerId(ownerId);
-
-        List<ItemDto> userItems = new ArrayList<>();
-        for (Item item : itemStorage.findAllItemsByUserId(ownerId)) {
-            userItems.add(ItemMapper.toItemDto(item));
+        if (userRepository.findById(ownerId).isEmpty()) {
+            throw new NotFoundException("User not found");
         }
-        return userItems;
+
+        List<Item> userItems = itemRepository.findAllByOwnerId(ownerId);
+        List<ItemDto> userItemsDto = new ArrayList<>();
+
+        for (Item userItem : userItems) {
+            userItemsDto.add(ItemMapper.toItemDto(userItem));
+        }
+
+        return userItemsDto;
     }
 
     public List<ItemDto> searchByText(String text) {
-        List<Item> itemList = itemStorage.findAll();
+        List<Item> itemList = itemRepository.findAll();
         List<ItemDto> resultList = new ArrayList<>();
 
         if (text == null || text.isBlank() || text.isEmpty())
@@ -86,35 +96,5 @@ public class ItemService {
         }
 
         return resultList;
-    }
-
-    // методы для валидации
-    public void validate(ItemDto itemDto, long ownerId) {
-        checkOwnerId(ownerId);
-
-        if (isOwnerNotExist(ownerId)) {
-            throw new ItemOwnerNotExistException("Указанный владелец не зарегестрирован");
-        }
-
-        if (
-                itemDto.getName() == null ||
-                        itemDto.getName().isBlank() ||
-                        itemDto.getDescription() == null ||
-                        itemDto.getDescription().isBlank() ||
-                        itemDto.getAvailable() == null
-        ) {
-            throw new ValidationException("Не хватает данных");
-        }
-    }
-
-    public void checkOwnerId(long ownerId) {
-        if (ownerId == 0) {
-            throw new ItemOwnerValidationException("Не указан владелец");
-        }
-    }
-
-    private boolean isOwnerNotExist(long ownerId) {
-        User owner = userStorage.findUserById(ownerId);
-        return owner == null;
     }
 }

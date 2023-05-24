@@ -23,7 +23,7 @@ public class ItemController {
      */
     @PostMapping
     public ItemDto addItem(@RequestBody ItemDto itemDto, @RequestHeader(ownerIdHeaderTitle) long owner) {
-        log.info("Adding new item");
+        log.info("Adding new item by owner: " + owner);
         return itemService.addItem(itemDto, owner);
     }
 
