@@ -2,13 +2,16 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.BookingMapper;
+import ru.practicum.shareit.booking.BookingRepository;
+import ru.practicum.shareit.booking.BookingShort;
+import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.exceptions.NotFoundException;
-import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.UserValidationService;
-import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.User;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -18,6 +21,8 @@ import java.util.Optional;
 public class ItemService {
     private final ItemRepository itemRepository;
     private final UserRepository userRepository;
+    private final BookingRepository bookingRepository;
+    private final CommentRepository commentRepository;
     private final ItemValidationService itemValidationService;
     private final UserValidationService userValidationService;
 
@@ -55,26 +60,30 @@ public class ItemService {
         }
     }
 
-    public ItemDto findItemById(long itemId) {
+    public ItemDtoWithBookings findItemById(long itemId, long userId) {
         Optional<Item> optionalItem = itemRepository.findById(itemId);
 
         if (optionalItem.isPresent()) {
-            return ItemMapper.toItemDto(optionalItem.get());
+            Item item = optionalItem.get();
+
+            ItemDtoWithBookings itemDtoWithBookings = setLastAndNextBookings(item, userId);
+            return setCommentsToItemDto(itemDtoWithBookings);
         } else {
             throw new NotFoundException("Item not found");
         }
     }
 
-    public List<ItemDto> findAllByOwnerId(long ownerId) {
+    public List<ItemDtoWithBookings> findAllByOwnerId(long ownerId) {
         if (userRepository.findById(ownerId).isEmpty()) {
             throw new NotFoundException("User not found");
         }
 
         List<Item> userItems = itemRepository.findAllByOwnerId(ownerId);
-        List<ItemDto> userItemsDto = new ArrayList<>();
+        List<ItemDtoWithBookings> userItemsDto = new ArrayList<>();
 
         for (Item userItem : userItems) {
-            userItemsDto.add(ItemMapper.toItemDto(userItem));
+            ItemDtoWithBookings itemDtoWithBookings = setLastAndNextBookings(userItem, ownerId);
+            userItemsDto.add(setCommentsToItemDto(itemDtoWithBookings));
         }
 
         return userItemsDto;
@@ -96,5 +105,50 @@ public class ItemService {
         }
 
         return resultList;
+    }
+
+    public CommentDto addComment(long itemId, long userID, CommentDto commentDto) {
+        itemValidationService.checkItemIsExist(itemId);
+        userValidationService.checkUserIsExist(userID);
+        Item item = itemRepository.findById(itemId).get();
+        User author = userRepository.findById(userID).get();
+        itemValidationService.checkUserIsBookerOfItem(itemId, userID);
+        itemValidationService.checkComment(commentDto);
+
+        Comment comment = CommentMapper.toComment(commentDto, author, item, LocalDateTime.now());
+        Comment returnedComment = commentRepository.save(comment);
+        return CommentMapper.toCommentDto(returnedComment);
+    }
+
+    private ItemDtoWithBookings setLastAndNextBookings(Item item, long userId) {
+        ItemDtoWithBookings itemDtoWithBookings = ItemMapper.toItemDtoWithBookings(item);
+        User owner = userRepository.findById(userId).get();
+        if (item.getOwner().getId() != userId) {
+            return itemDtoWithBookings;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        List<Booking> futureBookingsByOwner = bookingRepository.getAllBookingsForNext(item, now, owner);
+        List<Booking> pastBookingsByOwner = bookingRepository.getAllBookingsForLast(item, now, owner);
+        if (pastBookingsByOwner.size() > 0) {
+            BookingShort lastBooking = BookingMapper.toBookingShort(pastBookingsByOwner.get(0));
+            itemDtoWithBookings.setLastBooking(lastBooking);
+        }
+        if (futureBookingsByOwner.size() > 0) {
+            BookingShort nextBooking = BookingMapper.toBookingShort(futureBookingsByOwner.get(0));
+            itemDtoWithBookings.setNextBooking(nextBooking);
+        }
+
+        return itemDtoWithBookings;
+    }
+
+    private ItemDtoWithBookings setCommentsToItemDto(ItemDtoWithBookings itemDtoWithBookings) {
+        List<Comment> comments = commentRepository.findByItemId(itemDtoWithBookings.getId());
+        List<CommentDto> commentDtos = new ArrayList<>();
+        for (Comment comment : comments) {
+            commentDtos.add(CommentMapper.toCommentDto(comment));
+        }
+        itemDtoWithBookings.setComments(commentDtos);
+
+        return itemDtoWithBookings;
     }
 }
