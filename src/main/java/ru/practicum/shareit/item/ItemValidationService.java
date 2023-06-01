@@ -48,7 +48,7 @@ public class ItemValidationService {
     }
 
     public void checkComment(CommentDto commentDto) {
-        if (commentDto.getText().isBlank() || commentDto.getText().isBlank() || commentDto.getText().equals("")) {
+        if (commentDto.getText().isBlank() || commentDto.getText().isEmpty()) {
             throw new ValidationException("Comment must contains text");
         }
     }
