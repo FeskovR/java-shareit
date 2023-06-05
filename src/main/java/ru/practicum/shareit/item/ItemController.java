@@ -22,7 +22,7 @@ public class ItemController {
      */
     @PostMapping
     public ItemDto addItem(@RequestBody ItemDto itemDto, @RequestHeader(ownerIdHeaderTitle) long owner) {
-        log.info("Adding new item by owner: " + owner);
+        log.info("Adding new item by owner: {}", owner);
         return itemService.addItem(itemDto, owner);
     }
 
@@ -37,7 +37,7 @@ public class ItemController {
     public ItemDto updateItem(@RequestBody ItemDto itemDto,
                            @PathVariable long itemId,
                            @RequestHeader(ownerIdHeaderTitle) long owner) {
-        log.info("Updating item id: " + itemId);
+        log.info("Updating item id: {}", itemId);
         return itemService.updateItem(itemDto, owner, itemId);
     }
 
@@ -49,7 +49,7 @@ public class ItemController {
     @GetMapping("{itemId}")
     public ItemDtoWithBookings findItemById(@PathVariable long itemId,
                                             @RequestHeader(ownerIdHeaderTitle) long userId) {
-        log.info("Getting item id: " + itemId);
+        log.info("Getting item id: {}", itemId);
         return itemService.findItemById(itemId, userId);
     }
 
@@ -60,21 +60,33 @@ public class ItemController {
      */
     @GetMapping
     public List<ItemDtoWithBookings> findAllByOwnerId(@RequestHeader(ownerIdHeaderTitle) long owner) {
-        log.info("Getting all items by owner id: " + owner);
+        log.info("Getting all items by owner id: {}",owner);
         return itemService.findAllByOwnerId(owner);
     }
 
+    /**
+     * Поиск вещей по тексту
+     * @param text search text
+     * @return list of items DTO
+     */
     @GetMapping("/search")
     public List<ItemDto> searchByText(@RequestParam String text) {
-        log.info("Searching item by text: \"" + text + "\"");
+        log.info("Searching item by text: \"{}\"", text);
         return itemService.searchByText(text);
     }
 
+    /**
+     * Добавление комментария от пользователя, который уже воспользовался вещью
+     * @param itemId item ID
+     * @param userId booker ID
+     * @param comment text of comment
+     * @return comment dto
+     */
     @PostMapping("/{itemId}/comment")
     public CommentDto addComment(@PathVariable long itemId,
                               @RequestHeader(ownerIdHeaderTitle) long userId,
                               @RequestBody CommentDto comment) {
-        log.info("Adding comment from user id: " + userId + " to item id: " + itemId);
+        log.info("Adding comment from user id: {} to item id: {}", userId, itemId);
         return itemService.addComment(itemId, userId, comment);
     }
 }
