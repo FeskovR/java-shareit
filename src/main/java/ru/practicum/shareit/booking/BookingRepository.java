@@ -112,4 +112,6 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
             "and b.booker = ?3 " +
             "and b.status <> 'REJECTED' ")
     Long countListOfBookersForItem(Item item, LocalDateTime now, User user);
+
+
 }

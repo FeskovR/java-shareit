@@ -2,19 +2,21 @@ package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
 import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingShort;
-import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
-import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.user.User;
+import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.util.ItemValidationService;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -80,8 +82,53 @@ public class ItemServiceImpl implements ItemService {
         List<Item> userItems = itemRepository.findAllByOwnerId(ownerId);
         List<ItemDtoWithBookings> userItemsDto = new ArrayList<>();
 
+        Map<Long, Booking> pastBookings = new HashMap<>();
+        List<Booking> pastBookingsList = bookingRepository.findPastBookingsByOwner(owner, LocalDateTime.now());
+
+        for (Booking booking : pastBookingsList) {
+            long itemId = booking.getItem().getId();
+            if (pastBookings.get(itemId) == null) {
+                pastBookings.put(itemId, booking);
+            } else {
+                Booking prevBooking = pastBookings.get(itemId);
+                if (booking.getStart().isAfter(prevBooking.getStart())) {
+                    pastBookings.put(itemId, booking);
+                }
+            }
+        }
+
+        Map<Long, Booking> nextBookings = new HashMap<>();
+        List<Booking> nextBookingsList = bookingRepository.findFutureBookingsByOwner(owner, LocalDateTime.now());
+
+        for (Booking booking : nextBookingsList) {
+            long itemId = booking.getItem().getId();
+            if (nextBookings.get(itemId) == null) {
+                nextBookings.put(itemId, booking);
+            } else {
+                Booking prevBooking = nextBookings.get(itemId);
+                if (booking.getStart().isBefore(prevBooking.getStart())) {
+                    nextBookings.put(itemId, booking);
+                }
+            }
+        }
+
         for (Item userItem : userItems) {
-            ItemDtoWithBookings itemDtoWithBookings = setLastAndNextBookings(userItem, owner);
+            ItemDtoWithBookings itemDtoWithBookings = ItemMapper.toItemDtoWithBookings(userItem);
+
+            Booking lastBooking = pastBookings.getOrDefault(userItem.getId(), null);
+            if (lastBooking != null) {
+                itemDtoWithBookings.setLastBooking(BookingMapper.toBookingShort(lastBooking));
+            } else {
+                itemDtoWithBookings.setLastBooking(null);
+            }
+
+            Booking nextBooking = nextBookings.getOrDefault(userItem.getId(), null);
+            if (nextBooking != null) {
+                itemDtoWithBookings.setNextBooking(BookingMapper.toBookingShort(nextBooking));
+            } else {
+                itemDtoWithBookings.setNextBooking(null);
+            }
+
             userItemsDto.add(setCommentsToItemDto(itemDtoWithBookings));
         }
 
