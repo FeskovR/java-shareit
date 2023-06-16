@@ -37,4 +37,10 @@ public class ErrorHandler {
     public ErrorResponse handler(final NotFoundException e) {
         return new ErrorResponse("Не найдено", e.getMessage());
     }
+
+    @ExceptionHandler
+    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR) //500
+    public ErrorResponse handler(final UnknownStateException e) {
+        return new ErrorResponse("Unknown state: UNSUPPORTED_STATUS", e.getMessage());
+    }
 }

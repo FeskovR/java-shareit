@@ -3,8 +3,6 @@ package ru.practicum.shareit.user;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.model.User;
 
 import java.util.List;
 
@@ -44,7 +42,7 @@ public class UserController {
      */
     @PatchMapping("/{userId}")
     public User updateUser(@RequestBody UserDto userDto, @PathVariable long userId) {
-        log.info("Updating user id: " + userId);
+        log.info("Updating user id: {}", userId);
         return userService.updateUser(userDto, userId);
     }
 
@@ -55,7 +53,7 @@ public class UserController {
      */
     @GetMapping("/{userId}")
     public User findUserById(@PathVariable long userId) {
-        log.info("Getting user by id: " + userId);
+        log.info("Getting user by id: {}", userId);
         return userService.findUserById(userId);
     }
 
@@ -65,7 +63,7 @@ public class UserController {
      */
     @DeleteMapping("/{userId}")
     public void deleteUser(@PathVariable long userId) {
-        log.info("Deleting user by id: " + userId);
+        log.info("Deleting user by id: {}", userId);
         userService.deleteUser(userId);
     }
 }
