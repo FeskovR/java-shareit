@@ -8,6 +8,8 @@ import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingShort;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.util.ItemValidationService;
@@ -25,12 +27,14 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
 
     public ItemDto addItem(ItemDto itemDto, long ownerId) {
         ItemValidationService.validate(itemDto);
         User owner = userRepository.findById(ownerId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId()).orElse(null);
         Item item = ItemMapper.toItem(itemDto, owner);
         Item returnedItem = itemRepository.save(item);
         return ItemMapper.toItemDto(returnedItem);
@@ -43,6 +47,7 @@ public class ItemServiceImpl implements ItemService {
         User user = userRepository.findById(ownerId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId()).orElse(null);
         Item newItem = ItemMapper.toItem(itemDto, user);
 
         if (item.getOwner() != newItem.getOwner()) {

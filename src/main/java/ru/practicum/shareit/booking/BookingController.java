@@ -63,9 +63,11 @@ public class BookingController {
      */
     @GetMapping
     public List<Booking> findAllByBooker(@RequestHeader(ownerIdHeaderTitle) long userId,
-                                         @RequestParam(required = false, defaultValue = "ALL") String state) {
+                                         @RequestParam(required = false, defaultValue = "ALL") String state,
+                                         @RequestParam(required = false, defaultValue = "0") long from,
+                                         @RequestParam(required = false, defaultValue = "20") int size) {
         log.info("Getting {} booker bookings", state);
-        return bookingService.findAllByBooker(userId, state);
+        return bookingService.findAllByBooker(userId, state, from, size);
     }
 
     /**
@@ -76,8 +78,10 @@ public class BookingController {
      */
     @GetMapping("/owner")
     public List<Booking> findAllByOwner(@RequestHeader(ownerIdHeaderTitle) long userId,
-                                        @RequestParam(required = false, defaultValue = "ALL") String state) {
+                                        @RequestParam(required = false, defaultValue = "ALL") String state,
+                                        @RequestParam(required = false, defaultValue = "0") long from,
+                                        @RequestParam(required = false, defaultValue = "20") int size) {
         log.info("Getting {} owner bookings", state);
-        return bookingService.findAllByOwner(userId, state);
+        return bookingService.findAllByOwner(userId, state, from, size);
     }
 }

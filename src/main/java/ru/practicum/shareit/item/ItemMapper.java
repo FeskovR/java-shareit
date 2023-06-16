@@ -9,7 +9,7 @@ public class ItemMapper {
                 item.getName(),
                 item.getDescription(),
                 item.getAvailable(),
-                item.getRequest() != null ? item.getRequest() : null);
+                item.getRequestId() != 0 ? item.getRequestId() : 0);
     }
 
     public static Item toItem(ItemDto itemDto, User user) {
@@ -19,7 +19,7 @@ public class ItemMapper {
                 itemDto.getDescription(),
                 itemDto.getAvailable(),
                 user,
-                itemDto.getRequest()
+                itemDto.getRequestId()
         );
     }
 

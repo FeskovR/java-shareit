@@ -9,7 +9,7 @@ public interface BookingService {
 
     Booking findBookingById(long bookingId, long userId);
 
-    List<Booking> findAllByBooker(long userId, String state);
+    List<Booking> findAllByBooker(long userId, String state, long from, int size);
 
-    List<Booking> findAllByOwner(long userId, String state);
+    List<Booking> findAllByOwner(long userId, String state, long from, int size);
 }
