@@ -71,9 +71,9 @@ public class BookingServiceImplTest {
 
     @Test
     void addBookingWithInvalidBookingDtoThenThrowValidationException() {
-        BookingDto InvalidBookingDto = new BookingDto();
+        BookingDto invalidBookingDto = new BookingDto();
 
-        assertThrows(ValidationException.class, () -> bookingService.addBooking(InvalidBookingDto, 1L));
+        assertThrows(ValidationException.class, () -> bookingService.addBooking(invalidBookingDto, 1L));
     }
 
     @Test
