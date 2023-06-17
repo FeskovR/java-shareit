@@ -1,6 +1,9 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
@@ -79,12 +82,19 @@ public class ItemServiceImpl implements ItemService {
         return setCommentsToItemDto(itemDtoWithBookings);
     }
 
-    public List<ItemDtoWithBookings> findAllByOwnerId(long ownerId) {
+    public List<ItemDtoWithBookings> findAllByOwnerId(long ownerId, long from, int size) {
         User owner = userRepository.findById(ownerId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        if (from < 0 || size < 1) {
+            throw new ValidationException("Pageable validation error");
+        }
 
-        List<Item> userItems = itemRepository.findAllByOwnerId(ownerId);
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        Pageable pageable = PageRequest.of(page, size);
+
+        List<Item> userItems = itemRepository.findAllByOwnerId(ownerId, pageable);
         List<ItemDtoWithBookings> userItemsDto = new ArrayList<>();
 
         Map<Long, Booking> pastBookings = new HashMap<>();
@@ -140,12 +150,21 @@ public class ItemServiceImpl implements ItemService {
         return userItemsDto;
     }
 
-    public List<ItemDto> searchByText(String text) {
-        List<Item> itemList = itemRepository.findAll();
+    public List<ItemDto> searchByText(String text, long from, int size) {
+        if (from < 0 || size < 1) {
+            throw new ValidationException("Pageable validation error");
+        }
+
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        Pageable pageable = PageRequest.of(page, size);
+
+        List<Item> itemList = itemRepository.findAll(pageable).toList();
         List<ItemDto> resultList = new ArrayList<>();
 
         if (text == null || text.isBlank() || text.isEmpty())
             return resultList;
+
 
         for (Item item : itemList) {
             if (item.getName().toLowerCase().contains(text.toLowerCase()) ||
