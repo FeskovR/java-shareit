@@ -53,6 +53,7 @@ public class ItemServiceImpl implements ItemService {
         ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId()).orElse(null);
         Item newItem = ItemMapper.toItem(itemDto, user);
 
+
         if (item.getOwner() != newItem.getOwner()) {
             throw new NotFoundException("User is not owner of this item");
         }
@@ -63,6 +64,8 @@ public class ItemServiceImpl implements ItemService {
             newItem.setDescription(item.getDescription());
         if (newItem.getAvailable() == null)
             newItem.setAvailable(item.getAvailable());
+        if (itemRequest != null)
+            newItem.setRequestId(itemRequest.getId());
 
         newItem.setId(item.getId());
         Item updatedItem = itemRepository.save(newItem);

@@ -6,6 +6,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingDto;
 import ru.practicum.shareit.booking.BookingRepository;
@@ -100,5 +103,16 @@ public class ItemServiceImplTest {
         itemDtoWithBookings.setComments(new ArrayList<>());
 
         assertEquals(itemDtoWithBookings, itemService.findItemById(1L, 1L));
+    }
+
+    @Test
+    void findAllByOwnerIdWhenValidUser() {
+
+    }
+
+    private Pageable getPageable(long from, int size) {
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        return PageRequest.of(page, size, sort);
     }
 }
