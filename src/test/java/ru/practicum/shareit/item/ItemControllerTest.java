@@ -59,7 +59,6 @@ public class ItemControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .accept(MediaType.APPLICATION_JSON)
                 .header("x-sharer-user-id", "1"))
-                //.andDo(print()) // Дебаг запроса и ответа для отладки
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(itemDto1.getId()))
                 .andExpect(jsonPath("$.name").value(itemDto1.getName()))
