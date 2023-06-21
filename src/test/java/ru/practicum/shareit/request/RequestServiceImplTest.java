@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.booking.BookingDto;
 import ru.practicum.shareit.booking.BookingService;
 import ru.practicum.shareit.exceptions.NotFoundException;
+import ru.practicum.shareit.exceptions.ValidationException;
 import ru.practicum.shareit.item.ItemDto;
 import ru.practicum.shareit.item.ItemService;
 import ru.practicum.shareit.user.User;
@@ -34,7 +35,9 @@ public class RequestServiceImplTest {
 
     UserDto requestorDto = new UserDto("owner", "owner@zz.zz");
     UserDto userDto = new UserDto("booker", "booker@zz.zz");
+    UserDto user1Dto = new UserDto("user", "user@zz.zz");
     ItemDto item1Dto = new ItemDto(0, "Item1", "Desc1", true, 0);
+    ItemDto itemWithRequestIdDto = new ItemDto(0, "Item", "With request id", true, 1);
     ItemDto item2Dto = new ItemDto(0, "Item2", "Desc2", false, 0);
     BookingDto booking1Dto = new BookingDto(1L,
             LocalDateTime.of(2099, 12, 12, 12, 12),
@@ -72,7 +75,9 @@ public class RequestServiceImplTest {
     @Test
     void findAllUserRequestsTest() {
         User requestor = userService.addUser(requestorDto);
+        User owner = userService.addUser(userDto);
         ItemRequest request = requestService.addItemRequest(requestDto, requestor.getId());
+        itemService.addItem(itemWithRequestIdDto, owner.getId());
 
         List<ItemRequestDtoWithItems> returned = requestService.findAllUserRequests(requestor.getId());
 
@@ -84,13 +89,16 @@ public class RequestServiceImplTest {
     @Test
     void findAllRequestsTest() {
         User requestor = userService.addUser(requestorDto);
+        User owner = userService.addUser(user1Dto);
         User user = userService.addUser(userDto);
         ItemRequest request = requestService.addItemRequest(requestDto, requestor.getId());
+        itemService.addItem(itemWithRequestIdDto, owner.getId());
 
         List<ItemRequestDtoWithItems> returned = requestService.findAllRequests(user.getId(), 1, 20);
 
         assertEquals(1, returned.size());
         assertEquals(requestDto.getDescription(), returned.get(0).getDescription());
-        assertThrows(NotFoundException.class, () -> requestService.findAllRequests(3L, 1, 20));
+        assertThrows(NotFoundException.class, () -> requestService.findAllRequests(4L, 1, 20));
+        assertThrows(ValidationException.class, () -> requestService.findAllRequests(user.getId(), -1, 0));
     }
 }
