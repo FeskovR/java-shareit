@@ -59,9 +59,11 @@ public class ItemController {
      * @return list of user itemsDto
      */
     @GetMapping
-    public List<ItemDtoWithBookings> findAllByOwnerId(@RequestHeader(ownerIdHeaderTitle) long owner) {
+    public List<ItemDtoWithBookings> findAllByOwnerId(@RequestHeader(ownerIdHeaderTitle) long owner,
+                                                      @RequestParam(required = false, defaultValue = "0") long from,
+                                                      @RequestParam(required = false, defaultValue = "500") int size) {
         log.info("Getting all items by owner id: {}",owner);
-        return itemService.findAllByOwnerId(owner);
+        return itemService.findAllByOwnerId(owner, from, size);
     }
 
     /**
@@ -70,9 +72,11 @@ public class ItemController {
      * @return list of items DTO
      */
     @GetMapping("/search")
-    public List<ItemDto> searchByText(@RequestParam String text) {
+    public List<ItemDto> searchByText(@RequestParam String text,
+                                      @RequestParam(required = false, defaultValue = "0") long from,
+                                      @RequestParam(required = false, defaultValue = "500") int size) {
         log.info("Searching item by text: \"{}\"", text);
-        return itemService.searchByText(text);
+        return itemService.searchByText(text, from, size);
     }
 
     /**

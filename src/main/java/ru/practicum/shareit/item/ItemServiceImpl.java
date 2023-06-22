@@ -1,6 +1,9 @@
 package ru.practicum.shareit.item;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.Booking;
 import ru.practicum.shareit.booking.BookingMapper;
@@ -8,6 +11,8 @@ import ru.practicum.shareit.booking.BookingRepository;
 import ru.practicum.shareit.booking.BookingShort;
 import ru.practicum.shareit.exceptions.NotFoundException;
 import ru.practicum.shareit.exceptions.ValidationException;
+import ru.practicum.shareit.request.ItemRequest;
+import ru.practicum.shareit.request.ItemRequestRepository;
 import ru.practicum.shareit.user.User;
 import ru.practicum.shareit.user.UserRepository;
 import ru.practicum.shareit.util.ItemValidationService;
@@ -25,12 +30,14 @@ public class ItemServiceImpl implements ItemService {
     private final UserRepository userRepository;
     private final BookingRepository bookingRepository;
     private final CommentRepository commentRepository;
+    private final ItemRequestRepository itemRequestRepository;
 
     public ItemDto addItem(ItemDto itemDto, long ownerId) {
         ItemValidationService.validate(itemDto);
         User owner = userRepository.findById(ownerId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId()).orElse(null);
         Item item = ItemMapper.toItem(itemDto, owner);
         Item returnedItem = itemRepository.save(item);
         return ItemMapper.toItemDto(returnedItem);
@@ -43,7 +50,9 @@ public class ItemServiceImpl implements ItemService {
         User user = userRepository.findById(ownerId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        ItemRequest itemRequest = itemRequestRepository.findById(itemDto.getRequestId()).orElse(null);
         Item newItem = ItemMapper.toItem(itemDto, user);
+
 
         if (item.getOwner() != newItem.getOwner()) {
             throw new NotFoundException("User is not owner of this item");
@@ -55,6 +64,8 @@ public class ItemServiceImpl implements ItemService {
             newItem.setDescription(item.getDescription());
         if (newItem.getAvailable() == null)
             newItem.setAvailable(item.getAvailable());
+        if (itemRequest != null)
+            newItem.setRequestId(itemRequest.getId());
 
         newItem.setId(item.getId());
         Item updatedItem = itemRepository.save(newItem);
@@ -74,12 +85,19 @@ public class ItemServiceImpl implements ItemService {
         return setCommentsToItemDto(itemDtoWithBookings);
     }
 
-    public List<ItemDtoWithBookings> findAllByOwnerId(long ownerId) {
+    public List<ItemDtoWithBookings> findAllByOwnerId(long ownerId, long from, int size) {
         User owner = userRepository.findById(ownerId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        if (from < 0 || size < 1) {
+            throw new ValidationException("Pageable validation error");
+        }
 
-        List<Item> userItems = itemRepository.findAllByOwnerId(ownerId);
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        Pageable pageable = PageRequest.of(page, size);
+
+        List<Item> userItems = itemRepository.findAllByOwnerId(ownerId, pageable);
         List<ItemDtoWithBookings> userItemsDto = new ArrayList<>();
 
         Map<Long, Booking> pastBookings = new HashMap<>();
@@ -135,12 +153,21 @@ public class ItemServiceImpl implements ItemService {
         return userItemsDto;
     }
 
-    public List<ItemDto> searchByText(String text) {
-        List<Item> itemList = itemRepository.findAll();
+    public List<ItemDto> searchByText(String text, long from, int size) {
+        if (from < 0 || size < 1) {
+            throw new ValidationException("Pageable validation error");
+        }
+
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        Pageable pageable = PageRequest.of(page, size);
+
+        List<Item> itemList = itemRepository.findAll(pageable).toList();
         List<ItemDto> resultList = new ArrayList<>();
 
         if (text == null || text.isBlank() || text.isEmpty())
             return resultList;
+
 
         for (Item item : itemList) {
             if (item.getName().toLowerCase().contains(text.toLowerCase()) ||

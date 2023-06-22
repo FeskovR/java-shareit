@@ -2,6 +2,9 @@ package ru.practicum.shareit.booking;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.booking.enums.Status;
 import ru.practicum.shareit.exceptions.NotFoundException;
@@ -83,15 +86,22 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<Booking> findAllByBooker(long userId, String state) {
+    public List<Booking> findAllByBooker(long userId, String state, long from, int size) {
         LocalDateTime now = LocalDateTime.now();
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        if (from < 0 || size < 1) {
+            throw new ValidationException("Pageable validation error");
+        }
+
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         switch (state) {
             case "ALL":
-                return bookingRepository.findAllBookingsByBooker(user);
+                return bookingRepository.findAllBookingsByBooker(user, pageable).toList();
             case "CURRENT":
                 return bookingRepository.findCurrentBookingsByBooker(user, now);
             case "PAST":
@@ -108,15 +118,22 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public List<Booking> findAllByOwner(long userId, String state) {
+    public List<Booking> findAllByOwner(long userId, String state, long from, int size) {
         LocalDateTime now = LocalDateTime.now();
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new NotFoundException("User not found")
         );
+        if (from < 0 || size < 1) {
+            throw new ValidationException("Pageable validation error");
+        }
+
+        int page = (int) (from / size);
+        Sort sort = Sort.by(Sort.Direction.ASC, "start");
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         switch (state) {
             case "ALL":
-                return bookingRepository.findAllBookingsByOwner(user);
+                return bookingRepository.findAllBookingsByOwner(user, pageable);
             case "CURRENT":
                 return bookingRepository.findCurrentBookingsByOwner(user, now);
             case "PAST":
